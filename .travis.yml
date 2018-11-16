@@ -1,0 +1,29 @@
+language: go
+
+go:
+  - 1.11.x
+
+go_import_path: gopkg.in/src-d/go-billy-gluster.v0
+
+dist: xenial
+addons:
+  apt:
+    update: true
+    packages:
+      - glusterfs-common
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: tip
+
+services:
+  - docker
+
+before_script:
+  - make container
+
+script:
+  - make dependencies
+  - make test-coverage
+  - make codecov
