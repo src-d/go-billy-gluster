@@ -22,7 +22,7 @@ type FilesystemSuite struct {
 }
 
 func (s *FilesystemSuite) SetUpTest(c *C) {
-	fs, err := New("172.17.0.2", "billy")
+	fs, err := New("localhost", "billy")
 	c.Assert(err, IsNil)
 
 	s.tmp, err = util.TempDir(fs, "", "billy")
