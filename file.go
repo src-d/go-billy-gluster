@@ -16,44 +16,33 @@ var (
 type mode int
 
 const (
-	ErrReadOnly  = "cannot write in %s, the file is read only"
+	// ErrReadOnly returned when file is read only.
+	ErrReadOnly = "cannot write in %s, the file is read only"
+	// ErrWriteOnly returned when file is write only.
 	ErrWriteOnly = "cannot read from %s, the file is write only"
 
 	read  mode = 0
 	write mode = 1
 )
 
+// File holds a gluster file descritor.
 type File struct {
 	path  string
 	g     *gfapi.File
 	flags int
 }
 
+// NewFile creates a new wrapped gluster file descriptor.
 func NewFile(name string, g *gfapi.File, flags int) *File {
 	return &File{path: name, g: g, flags: flags}
 }
 
-func (f *File) checkFlags(expected mode) error {
-	switch expected {
-	case read:
-		if f.flags&3 == os.O_WRONLY {
-			return fmt.Errorf(ErrWriteOnly, f.path)
-		}
-	case write:
-		if f.flags&3 == os.O_RDONLY {
-			return fmt.Errorf(ErrReadOnly, f.path)
-		}
-	default:
-		panic("unknown mode")
-	}
-
-	return nil
-}
-
+// Name implements billy.File interface.
 func (f *File) Name() string {
 	return f.path
 }
 
+// Write implements billy.File interface.
 func (f *File) Write(p []byte) (int, error) {
 	err := f.checkFlags(write)
 	if err != nil {
@@ -63,6 +52,7 @@ func (f *File) Write(p []byte) (int, error) {
 	return f.g.Write(p)
 }
 
+// Read implements billy.File interface.
 func (f *File) Read(p []byte) (int, error) {
 	err := f.checkFlags(read)
 	if err != nil {
@@ -83,6 +73,7 @@ func (f *File) Read(p []byte) (int, error) {
 	return n, err
 }
 
+// ReadAt implements billy.File interface.
 func (f *File) ReadAt(p []byte, off int64) (int, error) {
 	err := f.checkFlags(read)
 	if err != nil {
@@ -113,22 +104,46 @@ func (f *File) ReadAt(p []byte, off int64) (int, error) {
 	return n, err
 }
 
+// Seek implements billy.File interface.
 func (f *File) Seek(offset int64, whence int) (int64, error) {
 	return f.g.Seek(offset, whence)
 }
 
+// Close implements billy.File interface.
 func (f *File) Close() error {
 	return f.g.Close()
 }
 
+// Lock implements billy.File interface. It is a no-op as it is not
+// supported by gluster library.
 func (f *File) Lock() error {
 	return nil
 }
 
+// Unlock implements billy.File interface. It is a no-op as it is not
+// supported by gluster library.
 func (f *File) Unlock() error {
 	return nil
 }
 
+// Truncate implements billy.File interface.
 func (f *File) Truncate(size int64) error {
 	return f.g.Truncate(size)
+}
+
+func (f *File) checkFlags(expected mode) error {
+	switch expected {
+	case read:
+		if f.flags&3 == os.O_WRONLY {
+			return fmt.Errorf(ErrWriteOnly, f.path)
+		}
+	case write:
+		if f.flags&3 == os.O_RDONLY {
+			return fmt.Errorf(ErrReadOnly, f.path)
+		}
+	default:
+		panic("unknown mode")
+	}
+
+	return nil
 }

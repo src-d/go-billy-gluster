@@ -17,7 +17,7 @@ var _ = Suite(&FilesystemSuite{})
 type FilesystemSuite struct {
 	test.BasicSuite
 
-	FS  *GlusterFS
+	FS  *FS
 	tmp string
 }
 

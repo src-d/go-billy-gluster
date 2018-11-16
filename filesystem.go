@@ -9,13 +9,23 @@ import (
 	"gopkg.in/src-d/go-billy.v4"
 )
 
-var _ billy.Basic = new(GlusterFS)
+const (
+	strNoFileOrDir = "no such file or directory"
 
-type GlusterFS struct {
+	defaultDirectoryMode = 0755
+	defaultCreateMode    = 0666
+)
+
+var _ billy.Basic = new(FS)
+
+// FS manages the filesystem of a gluster volume. It implements
+// billy.Basic.
+type FS struct {
 	v *gfapi.Volume
 }
 
-func New(host, volume string) (*GlusterFS, error) {
+// New creates a new FS connecting it to the specified host and volume.
+func New(host, volume string) (*FS, error) {
 	vol := new(gfapi.Volume)
 	err := vol.Init(volume, host)
 	if err != nil {
@@ -27,33 +37,17 @@ func New(host, volume string) (*GlusterFS, error) {
 		return nil, err
 	}
 
-	g := &GlusterFS{v: vol}
+	g := &FS{v: vol}
 	return g, nil
 }
 
-func (g *GlusterFS) Close() error {
+// Close unmounts the gluster volume associated to the FS.
+func (g *FS) Close() error {
 	return g.v.Unmount()
 }
 
-const (
-	strNoFileOrDir = "no such file or directory"
-
-	defaultDirectoryMode = 0755
-	defaultCreateMode    = 0666
-)
-
-func (g *GlusterFS) createDir(fullpath string) error {
-	dir := filepath.Dir(fullpath)
-	if dir != "." {
-		if err := g.MkdirAll(dir, defaultDirectoryMode); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (g *GlusterFS) Create(filename string) (billy.File, error) {
+// Create implements billy.Basic interface.
+func (g *FS) Create(filename string) (billy.File, error) {
 	if err := g.createDir(filename); err != nil {
 		return nil, err
 	}
@@ -66,11 +60,17 @@ func (g *GlusterFS) Create(filename string) (billy.File, error) {
 	return NewFile(filename, f, os.O_RDWR), nil
 }
 
-func (g *GlusterFS) Open(filename string) (billy.File, error) {
+// Open implements billy.Basic interface.
+func (g *FS) Open(filename string) (billy.File, error) {
 	return g.OpenFile(filename, os.O_RDONLY, 0)
 }
 
-func (g *GlusterFS) OpenFile(filename string, flag int, perm os.FileMode) (billy.File, error) {
+// OpenFile implements billy.Basic interface.
+func (g *FS) OpenFile(
+	filename string,
+	flag int,
+	perm os.FileMode,
+) (billy.File, error) {
 	if flag&os.O_CREATE != 0 {
 		if err := g.createDir(filename); err != nil {
 			return nil, err
@@ -107,26 +107,44 @@ func (g *GlusterFS) OpenFile(filename string, flag int, perm os.FileMode) (billy
 	return NewFile(filename, f, flag), nil
 }
 
-func (g *GlusterFS) Stat(filename string) (os.FileInfo, error) {
+// Stat implements billy.Basic interface.
+func (g *FS) Stat(filename string) (os.FileInfo, error) {
 	return g.v.Stat(filename)
 }
 
-func (g *GlusterFS) Rename(oldpath string, newpath string) error {
+// Rename implements billy.Basic interface.
+func (g *FS) Rename(oldpath string, newpath string) error {
 	return g.v.Rename(oldpath, newpath)
 }
 
-func (g *GlusterFS) Remove(filename string) error {
+// Remove implements billy.Basic interface.
+func (g *FS) Remove(filename string) error {
 	return g.v.Unlink(filename)
 }
 
-func (g *GlusterFS) Join(elem ...string) string {
+// Join implements billy.Basic interface.
+func (g *FS) Join(elem ...string) string {
 	return filepath.Join(elem...)
 }
 
-func (g *GlusterFS) ReadDir(path string) ([]os.FileInfo, error) {
+// ReadDir is not implemented by the underlying library. Added so billy.Dir
+// is implemented as it is needed by tests.
+func (g *FS) ReadDir(path string) ([]os.FileInfo, error) {
 	return nil, fmt.Errorf("ReadDir not implemented")
 }
 
-func (g *GlusterFS) MkdirAll(filename string, perm os.FileMode) error {
+// MkdirAll implements billy.Dir interface.
+func (g *FS) MkdirAll(filename string, perm os.FileMode) error {
 	return g.v.MkdirAll(filename, perm)
+}
+
+func (g *FS) createDir(fullpath string) error {
+	dir := filepath.Dir(fullpath)
+	if dir != "." {
+		if err := g.MkdirAll(dir, defaultDirectoryMode); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
