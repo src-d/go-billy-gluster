@@ -2,7 +2,7 @@
 
 This package provides a basic [go-billy](https://github.com/src-d/go-billy) driver to access [gluster](https://www.gluster.org/) volumes. It uses libgfapi so it's not needed to mount the volume locally.
 
-Currently only basic actions are available, that is:
+So far, following actions are implemented:
 
 * `Create`
 * `Open`
@@ -10,12 +10,13 @@ Currently only basic actions are available, that is:
 * `Stat`
 * `Rename`
 * `Remove`
+* `MkdirAll`
 
 For more information head to the [documentation](https://godoc.org/gopkg.in/src-d/go-billy-gluster.v0)
 
 # Installation
 
-This library uses [gogfapi](https://github.com/gluster/gogfapi) that need libgfapi library to run. This library is contained in the development client packages of gluster.
+This package requires native `libgfapi` library that is contained in the development client packages of gluster.
 
 * Arch / Manjaro:
 
@@ -86,9 +87,9 @@ func main() {
 
 # Code of Conduct
 
-All activities under source{d} projects are governed by the [source{d} code of conduct](.github/CODE_OF_CONDUCT.md).
+All activities under source{d} projects are governed by the [source{d} code of conduct](https://github.com/src-d/guide/blob/master/.github/CODE_OF_CONDUCT.md).
 
 # License
 
-GPL v3.0, see [LICENSE](LICENSE).
+Apache License Version 2.0, see [LICENSE](LICENSE).
 
