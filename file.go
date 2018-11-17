@@ -23,9 +23,11 @@ const (
 
 	read  mode = 0
 	write mode = 1
+
+	maskRW = os.O_RDONLY | os.O_WRONLY | os.O_RDWR
 )
 
-// File holds a gluster file descritor.
+// File holds a gluster file descriptor.
 type File struct {
 	path  string
 	g     *gfapi.File
@@ -86,11 +88,13 @@ func (f *File) ReadAt(p []byte, off int64) (int, error) {
 	}
 
 	n, err := f.g.ReadAt(p, off)
-	if err == nil {
-		_, err = f.Seek(offset, os.SEEK_SET)
-		if err != nil {
-			return 0, err
+
+	_, e := f.Seek(offset, os.SEEK_SET)
+	if e != nil {
+		if err == nil {
+			err = e
 		}
+		return 0, err
 	}
 
 	// fix negative read bytes number and add EOF, same as Read
@@ -134,11 +138,11 @@ func (f *File) Truncate(size int64) error {
 func (f *File) checkFlags(expected mode) error {
 	switch expected {
 	case read:
-		if f.flags&3 == os.O_WRONLY {
+		if f.flags&maskRW == os.O_WRONLY {
 			return fmt.Errorf(ErrWriteOnly, f.path)
 		}
 	case write:
-		if f.flags&3 == os.O_RDONLY {
+		if f.flags&maskRW == os.O_RDONLY {
 			return fmt.Errorf(ErrReadOnly, f.path)
 		}
 	default:

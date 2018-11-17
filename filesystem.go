@@ -71,7 +71,7 @@ func (g *FS) OpenFile(
 	flag int,
 	perm os.FileMode,
 ) (billy.File, error) {
-	if flag&os.O_CREATE != 0 {
+	if flag&os.O_CREATE == os.O_CREATE {
 		if err := g.createDir(filename); err != nil {
 			return nil, err
 		}
