@@ -14,6 +14,10 @@ const (
 
 	defaultDirectoryMode = 0755
 	defaultCreateMode    = 0666
+
+	capabilities billy.Capability = billy.WriteCapability |
+		billy.ReadCapability | billy.ReadAndWriteCapability |
+		billy.SeekCapability | billy.TruncateCapability
 )
 
 var _ billy.Basic = new(FS)
@@ -140,6 +144,11 @@ func (g *FS) ReadDir(path string) ([]os.FileInfo, error) {
 // MkdirAll implements billy.Dir interface.
 func (g *FS) MkdirAll(filename string, perm os.FileMode) error {
 	return g.v.MkdirAll(filename, perm)
+}
+
+// Capabilities implements billy.Capable interface.
+func (g *FS) Capabilities() billy.Capability {
+	return capabilities
 }
 
 func (g *FS) createDir(fullpath string) error {
