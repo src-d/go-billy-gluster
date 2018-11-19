@@ -114,6 +114,10 @@ func (g *FS) Stat(filename string) (os.FileInfo, error) {
 
 // Rename implements billy.Basic interface.
 func (g *FS) Rename(oldpath string, newpath string) error {
+	if err := g.createDir(newpath); err != nil {
+		return err
+	}
+
 	return g.v.Rename(oldpath, newpath)
 }
 
