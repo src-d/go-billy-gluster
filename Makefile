@@ -14,4 +14,4 @@ $(MAKEFILE):
 -include $(MAKEFILE)
 
 container:
-	bash -x ./container.sh
+	bash -x ./.test_setup.sh
