@@ -1,7 +1,6 @@
 package gluster
 
 import (
-	"os"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -16,6 +15,7 @@ var _ = Suite(&FilesystemSuite{})
 
 type FilesystemSuite struct {
 	test.BasicSuite
+	test.DirSuite
 
 	FS  *FS
 	tmp string
@@ -30,11 +30,12 @@ func (s *FilesystemSuite) SetUpTest(c *C) {
 
 	tmp := chroot.New(fs, s.tmp)
 	s.BasicSuite.FS = tmp
+	s.DirSuite.FS = tmp
 }
 
 func (s *FilesystemSuite) TearDownTest(c *C) {
 	if s.FS != nil {
-		err := os.RemoveAll(s.tmp)
+		err := util.RemoveAll(s.FS, s.tmp)
 		c.Assert(err, IsNil)
 
 		err = s.FS.Close()

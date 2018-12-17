@@ -1,7 +1,6 @@
 package gluster
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -135,10 +134,29 @@ func (g *FS) Join(elem ...string) string {
 	return filepath.Join(elem...)
 }
 
-// ReadDir is not implemented by the underlying library. Added so billy.Dir
-// is implemented as it is needed by tests.
+// ReadDir implements billy.Dir interface.
 func (g *FS) ReadDir(path string) ([]os.FileInfo, error) {
-	return nil, fmt.Errorf("ReadDir not implemented")
+	d, err := g.v.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	defer d.Close()
+
+	files, err := d.Readdir(0)
+	if err != nil {
+		return nil, err
+	}
+
+	// gluster Readdir returns also "." and ".."
+	clean := make([]os.FileInfo, 0, len(files))
+	for _, f := range files {
+		if f.Name() != "." && f.Name() != ".." {
+			clean = append(clean, f)
+		}
+	}
+
+	return clean, nil
 }
 
 // MkdirAll implements billy.Dir interface.
