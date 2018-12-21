@@ -19,6 +19,8 @@ before_script:
   - make container
 
 script:
+  - cp Gopkg.testing Gopkg.toml
+  - make godep
   - make dependencies
   - make test-coverage
   - make codecov
