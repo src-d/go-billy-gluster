@@ -161,14 +161,17 @@ func (g *FS) ReadDir(path string) ([]os.FileInfo, error) {
 	}
 
 	// gluster Readdir returns also "." and ".."
-	clean := make([]os.FileInfo, 0, len(files))
-	for _, f := range files {
-		if f.Name() != "." && f.Name() != ".." {
-			clean = append(clean, f)
+	n := len(files)
+	for i := 0; i < n; i++ {
+		if files[i].Name() == "." || files[i].Name() == ".." {
+			// swap with the last element
+			files[i], files[n-1] = files[n-1], files[i]
+			n--
+			i--
 		}
 	}
 
-	return clean, nil
+	return files[:n], nil
 }
 
 // MkdirAll implements billy.Dir interface.
