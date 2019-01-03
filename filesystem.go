@@ -1,9 +1,9 @@
 package gluster
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/gluster/gogfapi/gfapi"
 	"gopkg.in/src-d/go-billy.v4"
@@ -127,7 +127,18 @@ func (g *FS) Rename(oldpath string, newpath string) error {
 
 // Remove implements billy.Basic interface.
 func (g *FS) Remove(filename string) error {
-	return g.v.Unlink(filename)
+	err := g.v.Unlink(filename)
+	if err == nil {
+		return nil
+	}
+
+	if e, ok := err.(*os.PathError); ok {
+		if e.Err == syscall.EISDIR {
+			return g.v.Rmdir(filename)
+		}
+	}
+
+	return err
 }
 
 // Join implements billy.Basic interface.
@@ -135,10 +146,32 @@ func (g *FS) Join(elem ...string) string {
 	return filepath.Join(elem...)
 }
 
-// ReadDir is not implemented by the underlying library. Added so billy.Dir
-// is implemented as it is needed by tests.
+// ReadDir implements billy.Dir interface.
 func (g *FS) ReadDir(path string) ([]os.FileInfo, error) {
-	return nil, fmt.Errorf("ReadDir not implemented")
+	d, err := g.v.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	defer d.Close()
+
+	files, err := d.Readdir(0)
+	if err != nil {
+		return nil, err
+	}
+
+	// gluster Readdir returns also "." and ".."
+	n := len(files)
+	for i := 0; i < n; i++ {
+		if files[i].Name() == "." || files[i].Name() == ".." {
+			// swap with the last element
+			files[i], files[n-1] = files[n-1], files[i]
+			n--
+			i--
+		}
+	}
+
+	return files[:n], nil
 }
 
 // MkdirAll implements billy.Dir interface.

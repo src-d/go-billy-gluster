@@ -10,6 +10,7 @@ So far, following actions are implemented:
 * `Stat`
 * `Rename`
 * `Remove`
+* `Readdir`
 * `MkdirAll`
 
 For more information head to the [documentation](https://godoc.org/gopkg.in/src-d/go-billy-gluster.v0)
