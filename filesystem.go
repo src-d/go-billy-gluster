@@ -3,6 +3,7 @@ package gluster
 import (
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/gluster/gogfapi/gfapi"
 	"gopkg.in/src-d/go-billy.v4"
@@ -126,7 +127,18 @@ func (g *FS) Rename(oldpath string, newpath string) error {
 
 // Remove implements billy.Basic interface.
 func (g *FS) Remove(filename string) error {
-	return g.v.Unlink(filename)
+	err := g.v.Unlink(filename)
+	if err == nil {
+		return nil
+	}
+
+	if e, ok := err.(*os.PathError); ok {
+		if e.Err == syscall.EISDIR {
+			return g.v.Rmdir(filename)
+		}
+	}
+
+	return err
 }
 
 // Join implements billy.Basic interface.

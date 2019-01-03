@@ -24,6 +24,7 @@ type FilesystemSuite struct {
 func (s *FilesystemSuite) SetUpTest(c *C) {
 	fs, err := New("localhost", "billy")
 	c.Assert(err, IsNil)
+	s.FS = fs
 
 	s.tmp, err = util.TempDir(fs, "", "billy")
 	c.Assert(err, IsNil)
@@ -41,4 +42,14 @@ func (s *FilesystemSuite) TearDownTest(c *C) {
 		err = s.FS.Close()
 		c.Assert(err, IsNil)
 	}
+}
+
+func (s *FilesystemSuite) TestReaddirEmpty(c *C) {
+	fs := s.DirSuite.FS
+	err := fs.MkdirAll("test", 0777)
+	c.Assert(err, IsNil)
+
+	files, err := fs.ReadDir("test")
+	c.Assert(err, IsNil)
+	c.Assert(len(files), Equals, 0)
 }
