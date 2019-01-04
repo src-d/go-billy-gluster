@@ -21,15 +21,25 @@ type FilesystemSuite struct {
 	tmp string
 }
 
-func (s *FilesystemSuite) SetUpTest(c *C) {
+func (s *FilesystemSuite) SetUpSuite(c *C) {
 	fs, err := New("localhost", "billy")
 	c.Assert(err, IsNil)
 	s.FS = fs
+}
 
-	s.tmp, err = util.TempDir(fs, "", "billy")
+func (s *FilesystemSuite) TearDownSuite(c *C) {
+	if s.FS != nil {
+		err := s.FS.Close()
+		c.Assert(err, IsNil)
+	}
+}
+
+func (s *FilesystemSuite) SetUpTest(c *C) {
+	var err error
+	s.tmp, err = util.TempDir(s.FS, "", "billy")
 	c.Assert(err, IsNil)
 
-	tmp := chroot.New(fs, s.tmp)
+	tmp := chroot.New(s.FS, s.tmp)
 	s.BasicSuite.FS = tmp
 	s.DirSuite.FS = tmp
 }
@@ -37,9 +47,6 @@ func (s *FilesystemSuite) SetUpTest(c *C) {
 func (s *FilesystemSuite) TearDownTest(c *C) {
 	if s.FS != nil {
 		err := util.RemoveAll(s.FS, s.tmp)
-		c.Assert(err, IsNil)
-
-		err = s.FS.Close()
 		c.Assert(err, IsNil)
 	}
 }
